@@ -5,6 +5,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/products', component: () => import('@/pages/Products.vue') },
   { path: '/checkout', component: () => import('@/pages/Checkout.vue') },
   { path: '/cart', component: () => import('@/pages/Cart.vue') },
+  { path: '/orders/:id', component: () => import('@/pages/OrderSummary.vue') },
+  { path: '/orders', component: () => import('@/pages/Orders.vue') },
 ]
 
 export const router = createRouter({

@@ -1,77 +1,42 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { RouterView, RouterLink, useRoute } from 'vue-router'
+import { RouterView, RouterLink, useRoute, useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import CartDrawer from '@/components/CartDrawer.vue'
 import QRModal from '@/components/QRModal.vue'
 import MembershipModal from '@/components/MembershipModal.vue'
+import FindOrderModal from '@/components/FindOrderModal.vue'
 import type { CartItem, Product, UserProfile } from '@/types'
-import { uid } from '@/utils/format'
+import { useProductsStore } from '@/stores/products'
+import { useMembersStore } from '@/stores/members'
+import { useOrdersStore } from '@/stores/orders'
 
-const products: Product[] = [
-  {
-    id: 'club',
-    name: 'คลับแซนวิช',
-    description: 'ขนมปังปิ้งกรอบ ไข่ แฮม ชีส ผักสด ซอสสูตรพิเศษ',
-    price: 139,
-    image:
-      'https://images.unsplash.com/photo-1603048689770-3b8a0c52b7ae?q=80&w=1887&auto=format&fit=crop',
-    badge: 'ขายดี',
-  },
-  {
-    id: 'chicken',
-    name: 'แซนวิชไก่ย่าง',
-    description: 'อกไก่ย่างซูวีฉ่ำๆ อาโวคาโด ผักสด และซอสสไปซี่มายองเนส',
-    price: 149,
-    image:
-      'https://images.unsplash.com/photo-1553909489-cd47e0907980?q=80&w=1887&auto=format&fit=crop',
-  },
-  {
-    id: 'tuna',
-    name: 'แซนวิชทูน่า',
-    description: 'ทูน่าคุณภาพ คลุกซอสไลท์มายองเนส แตงกวา และผักสลัด',
-    price: 119,
-    image:
-      'https://images.unsplash.com/photo-1550317138-10000687a72b?q=80&w=1887&auto=format&fit=crop',
-  },
-  {
-    id: 'ham-cheese',
-    name: 'แฮมชีสคลาสสิก',
-    description: 'แฮมรมควัน ชีสเชดด้าร์ ขนมปังโฮลวีต อบใหม่ทุกวัน',
-    price: 109,
-    image:
-      'https://images.unsplash.com/photo-1576402187878-974f70c890a5?q=80&w=1887&auto=format&fit=crop',
-  },
-  {
-    id: 'veggie',
-    name: 'ผักอะโวคาโด',
-    description: 'อะโวคาโดสุกพอดี มะเขือเทศ ผักสลัด และซอสบัลซามิก',
-    price: 129,
-    image:
-      'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1887&auto=format&fit=crop',
-    badge: 'เพื่อสุขภาพ',
-  },
-  {
-    id: 'egg',
-    name: 'ไข่ลาวาชีส',
-    description: 'ไข่ลาวาหอมมัน ชีสเยิ้มๆ เสิร์ฟบนขนมปังกรอบ',
-    price: 125,
-    image:
-      'https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=1887&auto=format&fit=crop',
-  },
-]
-
+const productsStore = useProductsStore()
+const router = useRouter()
 const qtyMap = reactive<Record<string, number>>({})
-products.forEach((p) => (qtyMap[p.id] = 1))
+// Initialize qty for products once loaded
+watch(
+  () => productsStore.products,
+  (list) => {
+    list.forEach((p) => {
+      if (!(p.id in qtyMap)) qtyMap[p.id] = 1
+    })
+  },
+  { immediate: true },
+)
 
 const cart = ref<CartItem[]>([])
 const isCartOpen = ref(false)
 const isQROpen = ref(false)
 const isMemberOpen = ref(false)
+const isFindOrderOpen = ref(false)
 const orderId = ref('')
+const amountToPay = ref(0)
 const user = ref<UserProfile | null>(null)
+const membersStore = useMembersStore()
+const ordersStore = useOrdersStore()
 
 const subtotal = computed(() => cart.value.reduce((s, it) => s + it.product.price * it.qty, 0))
 const memberDiscount = computed(() => (user.value ? Math.round(subtotal.value * 0.1) : 0))
@@ -82,6 +47,12 @@ function addToCart(p: Product, qty = 1) {
   if (idx >= 0) cart.value[idx].qty += qty
   else cart.value.push({ product: p, qty })
   isCartOpen.value = true
+}
+
+function findOrder(id: string) {
+  if (!id) return
+  router.push(`/orders/${encodeURIComponent(id)}`)
+  isFindOrderOpen.value = false
 }
 
 function removeItem(idx: number) {
@@ -100,33 +71,51 @@ function decreaseItem(idx: number) {
   else it.qty -= 1
 }
 
-function checkout() {
+async function checkout() {
   if (cart.value.length === 0) return
-  orderId.value = uid('order')
-  isQROpen.value = true
+  try {
+    const payload = {
+      memberId: user.value?.id,
+      items: cart.value.map((it) => ({ productId: it.product.id, qty: it.qty })),
+    }
+    const order = await ordersStore.createOrder(payload)
+    orderId.value = order.order_id
+    amountToPay.value = order.grand_total
+    isQROpen.value = true
+  } catch (e) {
+    console.error(e)
+    alert('สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')
+  }
 }
 
 function handlePaid() {
+  const id = orderId.value || ordersStore.lastOrder?.order_id
+  if (id) {
+    router.push(`/orders/${encodeURIComponent(id)}`)
+  }
   cart.value = []
   isQROpen.value = false
-  alert('ขอบคุณที่ชำระเงินกับแซนวิชดี ออเดอร์ของคุณกำลังจัดเตรียม')
+  orderId.value = ''
+  amountToPay.value = 0
 }
 
-function saveMember(profile: { name: string; email: string; phone?: string }) {
-  const u: UserProfile = {
-    name: profile.name,
-    email: profile.email,
-    phone: profile.phone,
-    memberSince: new Date().toISOString(),
+async function saveMember(profile: { name: string; email: string; phone?: string }) {
+  try {
+    const created = await membersStore.register(profile)
+    user.value = created
+    isMemberOpen.value = false
+  } catch (e) {
+    console.error(e)
+    alert('สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')
   }
-  user.value = u
-  localStorage.setItem('sandwich.member', JSON.stringify(u))
-  isMemberOpen.value = false
 }
 
 onMounted(() => {
-  const m = localStorage.getItem('sandwich.member')
-  if (m) user.value = JSON.parse(m)
+  // Load products from backend
+  productsStore.fetchAll()
+  // Load member from localStorage
+  membersStore.loadFromStorage()
+  user.value = membersStore.current
   const savedCart = localStorage.getItem('sandwich.cart')
   if (savedCart) cart.value = JSON.parse(savedCart)
 })
@@ -150,6 +139,7 @@ const isHome = computed(() => route.path === '/')
       :count="cart.length"
       @open-cart="isCartOpen = true"
       @open-membership="isMemberOpen = true"
+      @open-find-order="isFindOrderOpen = true"
     />
 
     <!-- Render pages when not on home -->
@@ -238,7 +228,7 @@ const isHome = computed(() => route.path === '/')
       </div>
       <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <ProductCard
-          v-for="p in products"
+          v-for="p in productsStore.products"
           :key="p.id"
           :product="p"
           :qty="qtyMap[p.id]"
@@ -337,13 +327,14 @@ const isHome = computed(() => route.path === '/')
 
     <QRModal
       :open="isQROpen"
-      :amount="grandTotal"
+      :amount="amountToPay || grandTotal"
       :orderId="orderId"
       @close="isQROpen = false"
       @paid="handlePaid"
     />
 
     <MembershipModal :open="isMemberOpen" @close="isMemberOpen = false" @submit="saveMember" />
+    <FindOrderModal :open="isFindOrderOpen" @close="isFindOrderOpen = false" @submit="findOrder" />
   </div>
 </template>
 

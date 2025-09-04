@@ -3,7 +3,7 @@
     class="sticky top-0 z-40 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60"
   >
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:py-4">
-      <a href="#home" class="group inline-flex items-center gap-3">
+      <a href="/" class="group inline-flex items-center gap-3">
         <div
           class="h-9 w-9 rounded-xl bg-brand-gradient shadow-soft transition-transform group-hover:scale-105"
         ></div>
@@ -19,6 +19,8 @@
         <RouterLink to="/products" class="nav-link">เมนู</RouterLink>
         <a href="#membership" class="nav-link">สมาชิก</a>
         <RouterLink to="/checkout" class="nav-link">ชำระเงิน</RouterLink>
+        <RouterLink to="/orders" class="nav-link">ออเดอร์ของฉัน</RouterLink>
+        <button class="nav-link" @click="$emit('open-find-order')">ดูออเดอร์</button>
       </nav>
 
       <div class="flex items-center gap-2">
@@ -103,6 +105,14 @@
         >
         <RouterLink to="/checkout" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50" @click="mobileOpen = false"
           >ชำระเงิน</RouterLink>
+        <RouterLink to="/orders" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50" @click="mobileOpen = false"
+          >ออเดอร์ของฉัน</RouterLink>
+        <button
+          class="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-left text-slate-700 hover:bg-slate-50"
+          @click="$emit('open-find-order'); mobileOpen = false"
+        >
+          ดูออเดอร์
+        </button>
         <button
           class="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-left text-slate-700 hover:bg-slate-50"
           @click="
@@ -129,6 +139,7 @@ const { count } = defineProps<{ count: number }>()
 defineEmits<{
   (e: 'open-membership'): void
   (e: 'open-cart'): void
+  (e: 'open-find-order'): void
 }>()
 
 const mobileOpen = ref(false)
