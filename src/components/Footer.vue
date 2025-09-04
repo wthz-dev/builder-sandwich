@@ -12,7 +12,9 @@
           <a href="#checkout" class="hover:text-slate-900">ชำระเงิน</a>
         </nav>
       </div>
-      <div class="mt-6 text-xs text-slate-500">© {{ new Date().getFullYear() }} แซนวิชดี — สั่งง่าย ��่ายด้วย QR</div>
+      <div class="mt-6 text-xs text-slate-500">
+        © {{ new Date().getFullYear() }} แซนวิชดี — สั่งง่าย ��่ายด้วย QR
+      </div>
     </div>
   </footer>
 </template>
