@@ -56,5 +56,10 @@ import { defineProps } from 'vue'
 import { formatTHB } from '@/utils/format'
 import type { Product } from '@/types'
 
-const props = defineProps<{ product: Product; qty: number }>()
+defineProps<{ product: Product; qty: number }>()
+defineEmits<{
+  (e: 'increase'): void
+  (e: 'decrease'): void
+  (e: 'add'): void
+}>()
 </script>

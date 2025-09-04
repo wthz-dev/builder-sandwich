@@ -9,14 +9,17 @@
         <nav class="flex gap-4 text-sm text-slate-600">
           <a href="#menu" class="hover:text-slate-900">เมนู</a>
           <a href="#membership" class="hover:text-slate-900">สมาชิก</a>
-          <a href="#checkout" class="hover:text-slate-900">ชำระเงิน</a>
+          <RouterLink to="/checkout" class="hover:text-slate-900">ชำระเงิน</RouterLink>
         </nav>
       </div>
       <div class="mt-6 text-xs text-slate-500">
-        © {{ new Date().getFullYear() }} แซนวิชดี — สั่งง่าย ��่ายด้วย QR
+        {{ new Date().getFullYear() }} แซนวิชดี — สั่งง่าย จ่ายด้วย QR
       </div>
     </div>
   </footer>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { RouterLink } from 'vue-router'
+defineOptions({ name: 'AppFooter' })
+</script>

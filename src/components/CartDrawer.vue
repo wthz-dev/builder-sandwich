@@ -1,8 +1,8 @@
 <template>
   <teleport to="body">
     <div v-show="open" class="fixed inset-0 z-50 flex">
-      <div class="fixed inset-0 bg-slate-900/50" @click="$emit('close')"></div>
-      <aside class="ml-auto flex h-full w-full max-w-md flex-col bg-white shadow-xl">
+      <div class="absolute inset-0 bg-slate-900/50" @click="$emit('close')"></div>
+      <aside class="relative z-10 ml-auto flex h-full w-full max-w-md flex-col bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-4">
           <h2 class="font-display text-lg font-semibold text-slate-900">ตะกร้า</h2>
           <button
@@ -101,11 +101,19 @@ import { defineProps } from 'vue'
 import type { CartItem } from '@/types'
 import { formatTHB } from '@/utils/format'
 
-const props = defineProps<{
+defineProps<{
   open: boolean
   items: CartItem[]
   total: number
   memberDiscount: number
   grandTotal: number
+}>()
+defineEmits<{
+  (e: 'close'): void
+  (e: 'remove', idx: number): void
+  (e: 'increase', idx: number): void
+  (e: 'decrease', idx: number): void
+  (e: 'continue'): void
+  (e: 'checkout'): void
 }>()
 </script>

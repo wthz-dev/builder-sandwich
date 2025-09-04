@@ -15,10 +15,10 @@
         </div>
       </a>
 
-      <nav class="hidden items-center gap-1 sm:flex">
-        <a href="#menu" class="nav-link">เมนู</a>
+      <nav class="hidden items-center gap-1 sm:flex" aria-label="เมนูหลัก">
+        <RouterLink to="/products" class="nav-link">เมนู</RouterLink>
         <a href="#membership" class="nav-link">สมาชิก</a>
-        <a href="#checkout" class="nav-link">ชำระเงิน</a>
+        <RouterLink to="/checkout" class="nav-link">ชำระเงิน</RouterLink>
       </nav>
 
       <div class="flex items-center gap-2">
@@ -60,6 +60,7 @@
           class="sm:hidden inline-flex items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-sm hover:bg-slate-50"
           @click="mobileOpen = !mobileOpen"
           aria-label="เปิดเมนู"
+          :aria-expanded="mobileOpen"
         >
           <svg
             v-if="!mobileOpen"
@@ -96,18 +97,16 @@
       class="sm:hidden border-t border-slate-200/70 bg-white/90 backdrop-blur"
     >
       <div class="mx-auto max-w-7xl px-4 py-3">
-        <a href="#menu" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50">เมนู</a>
-        <a href="#membership" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50"
+        <RouterLink to="/products" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50" @click="mobileOpen = false">เมนู</RouterLink>
+        <a href="#membership" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50" @click="mobileOpen = false"
           >สมาชิก</a
         >
-        <a href="#checkout" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50"
-          >ชำระเงิน</a
-        >
+        <RouterLink to="/checkout" class="block rounded px-3 py-2 text-slate-700 hover:bg-slate-50" @click="mobileOpen = false"
+          >ชำระเงิน</RouterLink>
         <button
           class="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-left text-slate-700 hover:bg-slate-50"
           @click="
-            $emit('open-membership')
-            mobileOpen = false
+            $emit('open-membership'),mobileOpen = false
           "
         >
           สมัครสมาชิก
@@ -118,9 +117,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps } from 'vue'
+import { ref, defineProps, defineEmits } from 'vue'
+import { RouterLink } from 'vue-router'
 
-const props = defineProps<{ count: number }>()
+defineOptions({ name: 'AppHeader' })
+
+// Props
+const { count } = defineProps<{ count: number }>()
+
+// Emits (for TS type-safety in template via $emit)
+defineEmits<{
+  (e: 'open-membership'): void
+  (e: 'open-cart'): void
+}>()
+
 const mobileOpen = ref(false)
 </script>
 

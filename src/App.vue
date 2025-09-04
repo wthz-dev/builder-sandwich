@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { RouterView, RouterLink, useRoute } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import ProductCard from '@/components/ProductCard.vue'
@@ -7,7 +8,7 @@ import CartDrawer from '@/components/CartDrawer.vue'
 import QRModal from '@/components/QRModal.vue'
 import MembershipModal from '@/components/MembershipModal.vue'
 import type { CartItem, Product, UserProfile } from '@/types'
-import { formatTHB, uid } from '@/utils/format'
+import { uid } from '@/utils/format'
 
 const products: Product[] = [
   {
@@ -84,7 +85,9 @@ function addToCart(p: Product, qty = 1) {
 }
 
 function removeItem(idx: number) {
-  cart.value.splice(idx, 1)
+  if (idx >= 0 && idx < cart.value.length) {
+    cart.value.splice(idx, 1)
+  }
 }
 
 function increaseItem(idx: number) {
@@ -135,6 +138,10 @@ watch(
   },
   { deep: true },
 )
+
+// Routing state
+const route = useRoute()
+const isHome = computed(() => route.path === '/')
 </script>
 
 <template>
@@ -145,7 +152,11 @@ watch(
       @open-membership="isMemberOpen = true"
     />
 
-    <section class="relative overflow-hidden">
+    <!-- Render pages when not on home -->
+    <RouterView v-if="!isHome" />
+
+    <!-- Home sections -->
+    <section v-else class="relative overflow-hidden">
       <div class="pointer-events-none absolute inset-0 -z-10 opacity-20">
         <div
           class="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-brand-gradient blur-3xl"
@@ -185,6 +196,10 @@ watch(
               class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
               >สมัครสมาชิก</a
             >
+            <RouterLink
+              to="/checkout"
+              class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+            >ไปหน้าชำระเงิน</RouterLink>
           </div>
           <div
             v-if="user"
@@ -216,11 +231,10 @@ watch(
     <section id="menu" class="mx-auto max-w-7xl px-4 py-12">
       <div class="flex items-end justify-between gap-4">
         <h2 class="font-display text-2xl font-bold text-slate-900 sm:text-3xl">เมนูแซนวิช</h2>
-        <a
-          href="#checkout"
+        <RouterLink
+          to="/checkout"
           class="hidden text-sm font-medium text-brand-primary hover:underline sm:inline"
-          >ไปหน้าชำระเงิน</a
-        >
+          >ไปหน้าชำระเงิน</RouterLink>
       </div>
       <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <ProductCard
@@ -235,7 +249,7 @@ watch(
       </div>
     </section>
 
-    <section id="membership" class="bg-white/60">
+    <section v-if="isHome" id="membership" class="bg-white/60">
       <div class="mx-auto max-w-7xl px-4 py-12">
         <div class="grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -303,111 +317,7 @@ watch(
       </div>
     </section>
 
-    <section id="checkout" class="mx-auto max-w-7xl px-4 py-12">
-      <div class="grid gap-8 md:grid-cols-2">
-        <div>
-          <h2 class="font-display text-2xl font-bold text-slate-900 sm:text-3xl">
-            ชำระเงินด้วย QR Code
-          </h2>
-          <p class="mt-3 text-slate-600">ตรวจสอบรายการและกดปุ่มเพื่อสร้าง QR สแกนชำระทันที</p>
-          <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <table class="min-w-full text-sm">
-              <thead class="bg-slate-50 text-left text-slate-600">
-                <tr>
-                  <th class="px-4 py-3">สินค้า</th>
-                  <th class="px-4 py-3">จำนวน</th>
-                  <th class="px-4 py-3 text-right">ราคา</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="it in cart" :key="it.product.id" class="border-t border-slate-100">
-                  <td class="px-4 py-3">
-                    <div class="flex items-center gap-3">
-                      <img
-                        :src="it.product.image"
-                        :alt="it.product.name"
-                        class="h-10 w-10 rounded object-cover"
-                      />
-                      <div class="truncate">{{ it.product.name }}</div>
-                    </div>
-                  </td>
-                  <td class="px-4 py-3">{{ it.qty }}</td>
-                  <td class="px-4 py-3 text-right">{{ formatTHB(it.qty * it.product.price) }}</td>
-                </tr>
-              </tbody>
-              <tfoot class="border-t border-slate-200 text-sm">
-                <tr>
-                  <td></td>
-                  <td class="px-4 py-3 text-slate-600">ยอดรวม</td>
-                  <td class="px-4 py-3 text-right font-semibold">{{ formatTHB(subtotal) }}</td>
-                </tr>
-                <tr v-if="memberDiscount > 0" class="text-emerald-700">
-                  <td></td>
-                  <td class="px-4 py-3">ส่วนลดสมาชิก</td>
-                  <td class="px-4 py-3 text-right">-{{ formatTHB(memberDiscount) }}</td>
-                </tr>
-                <tr class="text-base">
-                  <td></td>
-                  <td class="px-4 py-3 font-semibold">สุทธิ</td>
-                  <td class="px-4 py-3 text-right font-extrabold">{{ formatTHB(grandTotal) }}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-          <div class="mt-4 flex flex-wrap gap-3">
-            <button
-              class="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
-              @click="isCartOpen = true"
-            >
-              แก้ไขตะกร้า
-            </button>
-            <button
-              :disabled="cart.length === 0"
-              class="rounded-xl bg-brand-primary px-5 py-3 font-semibold text-white shadow-soft transition enabled:hover:bg-brand-primaryDark disabled:cursor-not-allowed disabled:opacity-50"
-              @click="checkout"
-            >
-              สร้าง QR เพื่อชำระ
-            </button>
-          </div>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-6">
-          <h3 class="font-display text-lg font-semibold text-slate-900">ปลอดภัย ใช้งานง่าย</h3>
-          <ul class="mt-3 space-y-2 text-slate-600">
-            <li class="flex items-center gap-2">
-              <span
-                class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100"
-                >🔒</span
-              >
-              ไม่ต้องกรอก��ลขบัตร ชำระผ่านแอปธนาคาร
-            </li>
-            <li class="flex items-center gap-2">
-              <span
-                class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100"
-                >⚡</span
-              >
-              สร้าง QR อัตโนมัติภายในไม่กี่วินาที
-            </li>
-            <li class="flex items-center gap-2">
-              <span
-                class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100"
-                >🏦</span
-              >
-              รองรับทุกธนาคารในไทย
-            </li>
-          </ul>
-          <div class="mt-6 grid grid-cols-2 gap-3">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
-              <div class="text-sm text-slate-600">ส่วนลดสมาชิก</div>
-              <div class="text-2xl font-extrabold text-emerald-600">10%</div>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
-              <div class="text-sm text-slate-600">ค่าจัดส่ง</div>
-              <div class="text-2xl font-extrabold text-slate-900">ฟรี</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    
 
     <Footer />
 
@@ -418,9 +328,9 @@ watch(
       :memberDiscount="memberDiscount"
       :grandTotal="grandTotal"
       @close="isCartOpen = false"
-      @remove="removeItem"
-      @increase="increaseItem"
-      @decrease="decreaseItem"
+      @remove="removeItem($event)"
+      @increase="increaseItem($event)"
+      @decrease="decreaseItem($event)"
       @continue="isCartOpen = false"
       @checkout="checkout"
     />

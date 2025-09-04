@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { ref, defineProps } from 'vue'
 
-const props = defineProps<{ open: boolean }>()
+defineProps<{ open: boolean }>()
 
 const name = ref('')
 const email = ref('')
