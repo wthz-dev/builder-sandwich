@@ -74,15 +74,19 @@ router.post('/', async (req, res) => {
   }
 })
 
-// List orders by member
+// List orders (optionally by member)
 router.get('/', async (req, res) => {
   const { memberId } = req.query
-  if (!memberId) return res.status(400).json({ error: 'memberId is required' })
   try {
-    const [rows] = await pool.query(
-      'SELECT * FROM orders WHERE member_id = ? ORDER BY created_at DESC',
-      [memberId]
-    )
+    let rows
+    if (memberId) {
+      ;[rows] = await pool.query(
+        'SELECT * FROM orders WHERE member_id = ? ORDER BY created_at DESC',
+        [memberId]
+      )
+    } else {
+      ;[rows] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC')
+    }
     res.json(rows)
   } catch (err) {
     console.error(err)
@@ -91,11 +95,28 @@ router.get('/', async (req, res) => {
 })
 
 router.get('/:id', async (req, res) => {
-  const [orders] = await pool.query('SELECT * FROM orders WHERE id = ? OR order_id = ?', [req.params.id, req.params.id])
+  const key = req.params.id
+  const isNumeric = /^\d+$/.test(String(key))
+  const where = isNumeric ? 'id = ?' : 'order_id = ?'
+  const [orders] = await pool.query(`SELECT * FROM orders WHERE ${where}`, [key])
   if (orders.length === 0) return res.status(404).json({ error: 'Not found' })
   const order = orders[0]
   const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id])
   res.json({ ...order, items })
+})
+
+// Update order status
+router.put('/:id', async (req, res) => {
+  const { status } = req.body || {}
+  const allowed = new Set(['pending', 'paid', 'cancelled'])
+  if (!allowed.has(status)) return res.status(400).json({ error: 'Invalid status' })
+  const key = req.params.id
+  const isNumeric = /^\d+$/.test(String(key))
+  const where = isNumeric ? 'id = ?' : 'order_id = ?'
+  await pool.query(`UPDATE orders SET status = ? WHERE ${where}`, [status, key])
+  const [orders] = await pool.query(`SELECT * FROM orders WHERE ${where}`, [key])
+  if (orders.length === 0) return res.status(404).json({ error: 'Not found' })
+  res.json(orders[0])
 })
 
 module.exports = router

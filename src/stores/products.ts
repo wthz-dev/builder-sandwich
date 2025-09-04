@@ -23,5 +23,50 @@ export const useProductsStore = defineStore('products', () => {
     }
   }
 
-  return { products, loading, error, fetchAll }
+  async function createProduct(p: Product) {
+    loading.value = true
+    error.value = null
+    try {
+      await api.post('/products', p)
+      await fetchAll()
+    } catch (e: unknown) {
+      if (e instanceof Error) error.value = e.message
+      else error.value = 'Failed to create product'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateProduct(id: string, data: Partial<Product>) {
+    loading.value = true
+    error.value = null
+    try {
+      await api.put(`/products/${encodeURIComponent(id)}`, data)
+      await fetchAll()
+    } catch (e: unknown) {
+      if (e instanceof Error) error.value = e.message
+      else error.value = 'Failed to update product'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteProduct(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      await api.delete(`/products/${encodeURIComponent(id)}`)
+      products.value = products.value.filter((p) => p.id !== id)
+    } catch (e: unknown) {
+      if (e instanceof Error) error.value = e.message
+      else error.value = 'Failed to delete product'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { products, loading, error, fetchAll, createProduct, updateProduct, deleteProduct }
 })

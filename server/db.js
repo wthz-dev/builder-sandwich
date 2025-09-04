@@ -8,7 +8,7 @@ const pool = mysql.createPool({
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || '',
   database: process.env.MYSQL_DATABASE || 'sandwich_shop',
-  timezone: 'Asia/Bangkok',
+  timezone: '+07:00',
   waitForConnections: true,
   connectionLimit: 50,
   queueLimit: 0,

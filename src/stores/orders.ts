@@ -80,5 +80,35 @@ export const useOrdersStore = defineStore('orders', () => {
     }
   }
 
-  return { lastOrder, loading, error, createOrder, getById, listByMember }
+  async function listAll(): Promise<OrderResponse[]> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await api.get<OrderResponse[]>(`/orders`)
+      return data
+    } catch (e: unknown) {
+      if (e instanceof Error) error.value = e.message
+      else error.value = 'Failed to list orders'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateStatus(id: string | number, status: OrderResponse['status']): Promise<OrderResponse> {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await api.put<OrderResponse>(`/orders/${encodeURIComponent(String(id))}`,{ status })
+      return data
+    } catch (e: unknown) {
+      if (e instanceof Error) error.value = e.message
+      else error.value = 'Failed to update order status'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { lastOrder, loading, error, createOrder, getById, listByMember, listAll, updateStatus }
 })
